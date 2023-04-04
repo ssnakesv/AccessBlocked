@@ -1,0 +1,85 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <fstream>
+#include <chrono>
+using namespace std;
+
+const int MAX_ATTEMPTS = 5;
+
+// function to check if IP address matches known threats
+bool isThreat(string ipAddress)
+{
+	switch (ipAddress)
+	{
+		case "10.0.0.1":
+		case "192.168.0.1":
+		case "127.0.0.1":
+			return true;
+		default:
+			return false;
+	}
+}
+
+// function to log IP address and access time
+void logAccess(string ipAddress)
+{
+	ofstream logFile;
+	logFile.open("access.log", ios::app);
+	if (logFile.is_open())
+	{
+		logFile << ipAddress << " accessed the system at " << chrono::system_clock::now() << endl;
+		logFile.close();
+	}
+	else
+	{
+		cout << "Error: Unable to open log file." << endl;
+	}
+}
+
+int main()
+{
+	string ipAddress;
+	cout << "Enter IP address to check: ";
+	cin >> ipAddress;
+
+	// check if IP address matches known threats
+	if (isThreat(ipAddress))
+	{
+		cout << "IP address matches known threat. Block access." << endl;
+		return 0;
+	}
+
+	// log access time and IP address
+	logAccess(ipAddress);
+
+	// check if access attempts from this IP address exceed limit
+	ifstream logFile("access.log");
+	if (logFile.is_open())
+	{
+		vector<string> accessList;
+		string line;
+		while (getline(logFile, line))
+		{
+			if (line.find(ipAddress) != string::npos)
+			{
+				accessList.push_back(line);
+			}
+		}
+
+		logFile.close();
+		if (accessList.size() > MAX_ATTEMPTS)
+		{
+			cout << "Too many access attempts from this IP address. Block access." << endl;
+			return 0;
+		}
+	}
+	else
+	{
+		cout << "Error: Unable to open log file." << endl;
+	}
+
+	// allow access
+	cout << "IP address not found in threat database. Allow access." << endl;
+	return 0;
+}
